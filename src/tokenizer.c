@@ -1,107 +1,96 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include"tokenizer.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "tokenizer.h"
+#include "history.h"
 
-
-/* Return true (non-zero) if c is a whitespace characer
-   ('\t' or ' ').  
-   Zero terminators are not printable (therefore false) */
-int space_char(char c){
-    return (c == ' ' || c == '\t');
+int space_char(char c) {
+  return (c == ' ' || c == '\t');
 }
 
-/* Return true (non-zero) if c is a non-whitespace 
-   character (not tab or space).  
-   Zero terminators are not printable (therefore false) */ 
-int non_space_char(char c){
-    return (c != ' ' && c != '\t');
+int non_space_char(char c) {
+  return (c != ' ' && c != '\t' && c != '\0');
 }
 
-/* Returns a pointer to the first character of the next 
-   space-separated token in zero-terminated str.  Return a zero pointer if 
-   str does not contain any tokens. */
-char *token_start(char *str){
-    while(space_char(*str)){
-        str++;
+char *token_start(char *str) {
+  while(*str && space_char(*str)) str++;
+  return *str ? str : NULL;
+}
+
+char *token_terminator(char *token) {
+  while(*token && non_space_char(*token)) token++;
+  return token;
+}
+
+int count_tokens(char *str) {
+  int count = 0;
+  while((str = token_start(str))) {
+    str = token_terminator(str);
+    count++;
+  }
+  return count;
+}
+
+char *copy_str(char *inStr, short len) {
+  char *outStr = (char*)malloc(len + 1);
+  strncpy(outStr, inStr, len);
+  outStr[len] = '\0';
+  return outStr;
+}
+
+char **tokenize(char* str) {
+  int token_count = count_tokens(str);
+  char **tokens = (char**)malloc((token_count + 1) * sizeof(char*));
+  tokens[token_count] = NULL;
+  
+  for(int i = 0; i < token_count; i++) {
+    str = token_start(str);
+    char *end = token_terminator(str);
+    tokens[i] = copy_str(str, end - str);
+    str = end;
+  }
+  
+  return tokens;
+}
+
+void print_tokens(char **tokens) {
+  while(*tokens) {
+    printf("%s\n", *tokens);
+    tokens++;
+  }
+}
+
+void free_tokens(char **tokens) {
+  char **temp = tokens;
+  while(*temp) {
+    free(*temp);
+    temp++;
+  }
+  free(tokens);
+}
+
+int main() {
+  List *history = init_history();
+  char input[100];
+  
+  while(1) {
+    printf("Enter a string to tokenize (or '!' to view history, 'q' to quit): ");
+    fgets(input, 100, stdin);
+    input[strcspn(input, "\n")] = '\0'; // Remove newline character
+    
+    if(input[0] == 'q') break;
+    
+    if(input[0] == '!') {
+      print_history(history);
+      continue;
     }
-    if(*str == '\0'){
-        return NULL;
-    }
-    return str;
+    
+    add_history(history, input);
+    char **tokens = tokenize(input);
+    print_tokens(tokens);
+    free_tokens(tokens);
+  }
+  
+  free_history(history);
+  return 0;
 }
-
-/* Returns a pointer terminator char following *token */
-char *token_terminator(char *token){
-    while(non_space_char(*token)){
-        token++;
-    }
-    return token;
-}
-
-/* Counts the number of tokens in the string argument. */
-int count_tokens(char *str){
-    int count = 0;
-    char *token = token_start(str);
-    while(token != NULL){
-        count++;
-        token = token_start(token_terminator(token));
-    }
-    return count;
-}
-
-/* Returns a fresly allocated new zero-terminated string 
-   containing <len> chars from <inStr> */
-char *copy_str(char *inStr, short len){
-    char *outStr = malloc(len + 1);
-    for(int i = 0; i < len; i++){
-        outStr[i] = inStr[i];
-    }
-    outStr[len] = '\0';
-    return outStr;
-}
-
-/* Returns a freshly allocated zero-terminated vector of freshly allocated 
-   space-separated tokens from zero-terminated str.
-
-   For example, tokenize("hello world string") would result in:
-     tokens[0] = "hello"
-     tokens[1] = "world"
-     tokens[2] = "string" 
-     tokens[3] = 0
-*/
-char **tokenize(char* str){
-    int numTokens = count_tokens(str);
-    char **tokens = malloc((numTokens + 1) * sizeof(char *));
-    char *token = token_start(str);
-    for(int i = 0; i < numTokens; i++){
-        char *term = token_terminator(token);
-        int len = term - token;
-        tokens[i] = copy_str(token, len);
-        token = token_start(term);
-    }
-    tokens[numTokens] = 0;
-    return tokens;
-}
-
-/* Prints all tokens. */
-void print_tokens(char **tokens){
-    int i = 0;
-    while(tokens[i] != 0){
-        printf("%s\n", tokens[i]);
-        i++;
-    }
-}
-
-/* Frees all tokens and the vector containing themx. */
-void free_tokens(char **tokens){
-    int i = 0;
-    while(tokens[i] != 0){
-        free(tokens[i]);
-        i++;
-    }
-    free(tokens);
-}
-
-
-
-                

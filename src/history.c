@@ -4,81 +4,58 @@
 #include "history.h"
 
 List* init_history() {
-    List *list = (List*)malloc(sizeof(List));
-    list->root = NULL;
-    return list;
+  List *list = (List*)malloc(sizeof(List));
+  list->root = NULL;
+  return list;
 }
 
-/* Add a history item to the end of the list.
-   List* list - the linked list
-   char* str - the string to store
-*/
-void add_history(List *list, char *str){
-    Node *node = (Node*)malloc(sizeof(Node));
-    node->str = str;
-    node->next = NULL;
-    if(list->root == NULL){
-        list->root = node;
-    } else {
-        Node *curr = list->root;
-        while(curr->next != NULL){
-            curr = curr->next;
-        }
-        curr->next = node;
+void add_history(List *list, char *str) { 
+  Item *new_item = (Item*)malloc(sizeof(Item));
+  new_item->str = strdup(str);
+  new_item->next = NULL;
+  
+  if(list->root == NULL) {
+    new_item->id = 1;
+    list->root = new_item;
+  } else {
+    Item *temp = list->root;
+    int id = 1;
+    while(temp->next != NULL) {
+      temp = temp->next;
+      id++;
     }
+    new_item->id = id + 1;
+    temp->next = new_item;
+  }
 }
 
-
-/* Add a history item to the end of the list.
-   List* list - the linked list
-   char* str - the string to store
-*/
-void add_history(List *list, char *str){
-    Node *node = (Node*)malloc(sizeof(Node));
-    node->str = str;
-    node->next = NULL;
-    if(list->root == NULL){
-        list->root = node;
-    } else {
-        Node *curr = list->root;
-        while(curr->next != NULL){
-            curr = curr->next;
-        }
-        curr->next = node;
-    }
+char *get_history(List *list, int id) {
+  Item *temp = list->root;
+  while(temp != NULL) {
+    if(temp->id == id) return temp->str;
+    temp = temp->next;
+  }
+  return NULL;
 }
 
-/* Retrieve the string stored in the node where Item->id == id.
-   List* list - the linked list
-   int id - the id of the Item to find */
-char *get_history(List *list, int id){
-    Node *curr = list->root;
-    while(curr != NULL){
-        if(curr->id == id){
-            return curr->str;
-        }
-        curr = curr->next;
-    }
-    return NULL;
+void print_history(List *list) {
+  Item *temp = list->root;
+  while(temp != NULL) {
+    printf("%d: %s\n", temp->id, temp->str);
+    temp = temp->next;
+  }
 }
 
-/*Print the entire contents of the list. */
-void print_history(List *list){
-    Node *curr = list->root;
-    while(curr != NULL){
-        printf("%d: %s\n", curr->id, curr->str);
-        curr = curr->next;
-    }
-}
-
-/*Free the history list and the strings it references. */
-void free_history(List *list){
-    Node *curr = list->root;
-    while(curr != NULL){
-        Node *next = curr->next;
-        free(curr->str);
-        free(curr);
-        curr = next;
-    }
-    free(list);
+void free_history(List *list) {
+  Item *current = list->root;
+  Item *next;
+  
+  while(current != NULL) {
+    next = current->next;
+    free(current->str);
+    free(current);
+    current = next;
+  }
+  
+  free(list);
 }
